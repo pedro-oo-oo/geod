@@ -753,6 +753,7 @@ class Coordinates2d:
     
 class Time:
     def __init__(self, value, input_type='s'):
+        self.repr_type = 's'
         match input_type:
             case 's':
                 self.value = value
@@ -767,4 +768,64 @@ class Time:
             case _:
                 raise TypeError(f'Invalid Time.input_type (\'{input_type}\' is not s/m/h/d/w)')
             
+    def format_as(self, repr_type):
+        repr_types = ('w', 'd', 'h', 'm', 's',
+                        'milli', 'micro', 'nano', 'pico', 'femto')
+        assert repr_type in repr_types, f"repr_type must be from {repr_types}, not '{repr_type}'"
+        self.repr_type = repr_type
+        s = self.value
+        match repr_type:
+            case 'w':
+                w = s - s%604800
+                d = s - w - s%86400
+                h = s - w - d - s%3600
+                m = s - w - d - h - s%60
+                sc= s - w - d - h - m 
+                w /= 604800
+                d /= 86400
+                h /= 3600
+                m /= 60
+                w, d, h, m = int(w), int(d), int(h), int(m)
+                return f'{w}w {d}d {h}:{m:02}:{sc:02.2f}'
+            case 'd':
+                d = s - s%86400
+                h = s - d - s%3600
+                m = s - d - h - s%60
+                sc= s - d - h - m 
+                d /= 86400
+                h /= 3600
+                m /= 60
+                d, h, m = int(d), int(h), int(m)
+                return f'{d}d {h}:{m:02}:{sc:02.2f}'
+            case 'h':
+                h = s - s%3600
+                m = s - h - s%60
+                sc= s - h - m 
+                h, m = int(h), int(m)
+                return f'{h}:{m:02}:{sc:02.2f}'
+            case 'm':
+                m = s - s%60
+                sc = s - m
+                m = int(m)
+                return f'{m:02}:{sc:02.2f}'
+            case 's':
+                return f'{s:.2f}'
+            case 'milli':
+                return f'{s * 1e3}ms'
+            case 'micro':
+                return f'{s * 1e6}\u03bcs'
+            case 'nano':
+                return f'{s * 1e9}ns'
+            case 'pico':
+                return f'{s * 1e12}ps'
+            case 'femto':
+                return f'{s * 1e15}fs'
+
+
+    
+    def __str__(self):
+        return self.format_as(self.repr_type)
+    
+    def __repr__(self):
+        return f'{self.value}s'
         
