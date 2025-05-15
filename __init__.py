@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: pnapi
-v.1.0
+v.1.1
 
 #-------------------------------------------------------------#
 
@@ -10,7 +10,7 @@ Maybe you'll find something useful...
 
 Run geod.info() for... well, info.
 Or if you're old school, find the geod directory and find read_me.txt
-Contains exactly the same info.
+Contains exactly the same info. hihi
 """
 
 from .read_me import *
