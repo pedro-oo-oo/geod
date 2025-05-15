@@ -10,7 +10,7 @@ Maybe you'll find something useful...
 
 Run geod.info() for... well, info.
 Or if you're old school, find the geod directory and find read_me.txt
-Contains exactly the same info. hihi
+Contains exactly the same info.
 """
 
 from .read_me import *
