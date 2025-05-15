@@ -820,12 +820,42 @@ class Time:
                 return f'{s * 1e12}ps'
             case 'femto':
                 return f'{s * 1e15}fs'
-
-
     
     def __str__(self):
         return self.format_as(self.repr_type)
     
     def __repr__(self):
         return f'{self.value}s'
+    
+    def __sub__(self, other):
+        return Time(self.value - other.value)
+    
+    def __add__(self, other):
+        return Time(self.value + other.value)
+    
+    def __mul__(self, other):
+        return Time(self.value * other)
+
+    def __rmul__(self, other):
+        return Time(self.value * other)
+    
+    def __truediv__(self, other):
+        return Time(self.value / other)
+        
+    def __eq__(self, other):
+        return str(self) == str(other) 
+    
+    def __neg__(self):
+        return Time(-self.value)
+    
+    def __gt__(self, other):
+        return self.value > other.value
+    
+    def __lt__(self, other):
+        return self.value < other.value
+    
+    def __pow__(self, power):
+        'Why the @@@@ would you need this but here you go'
+        return Time(self.value**power)
+    
         
