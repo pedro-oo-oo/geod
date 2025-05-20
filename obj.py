@@ -537,7 +537,7 @@ class Coordinates3d:
                 return [xgk, ygk]
             
     def __repr__(self):
-        return 'lol'
+        return self.convert('flh', True)
     
     def __sub__(self, other):
         return self.x-other.x, self.y-other.y, self.z-other.z
