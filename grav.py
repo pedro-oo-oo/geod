@@ -5,15 +5,17 @@ Created on Thu Apr  3 16:34:18 2025
 @author: pnapi
 
 Gravimetry fraction of geod package
+Contains Height and GeopotNum classes for precise height calculations
+using gravity and stuff.
 
 """
 
 import numpy as np
 
 from . import const
-from . import geod as geodcore
+from . import geod
 from . import funcs
-from . import obj as geod
+from . import obj
 
 def dg_height(height):
     """
@@ -25,7 +27,7 @@ def dg_height(height):
 def drift():
     ...
     
-def gamma0_grs80(phi: geod.Angle) -> float:
+def gamma0_grs80(phi) -> float:
     gamma_0 = (978032.66 
                * (1 + 0.0053024*phi.sin()**2 - 0.0000058*phi.sin(2)**2))
     return (gamma_0)
@@ -44,7 +46,7 @@ def dg_poincaryprey(height: float, density: float = 2.67) -> float:
     """
     return round((0.3086 - 2*0.04192 * density) * height, 4)
 
-def anomaly(phi: geod.Angle, g: float, dg: float) -> float:
+def anomaly(phi, g: float, dg: float) -> float:
     """
     Returns gravitational anomaly in a given point, in mGal
 
@@ -100,7 +102,7 @@ def height_dif_dynamic(h_dif: float, g_a:float, g_b: float) -> float:
         Height difference in dynamic system.
     """
     gi = np.average([g_a, g_b])
-    g45 = gamma0_grs80(geod.Angle([45]))
+    g45 = gamma0_grs80(obj.Angle([45]))
     return h_dif + (gi - g45)/g45 * h_dif    
     
 def height_dif_orthometric(H_appr_A: float,
@@ -127,7 +129,7 @@ def height_dif_orthometric(H_appr_A: float,
     Returns:
         Height difference in orthometric system.
     """
-    g045 = gamma0_grs80(geod.Angle(np.pi/4))
+    g045 = gamma0_grs80(obj.Angle(np.pi/4))
     gr_a = g_a + dg_height(H_appr_A/2) + 2*dg_bouguer(H_appr_A/2)
     gr_b = g_b + dg_height(H_appr_B/2) + 2*dg_bouguer(H_appr_B/2)
     gi = np.average([g_a, g_b])
@@ -135,7 +137,7 @@ def height_dif_orthometric(H_appr_A: float,
             + (gr_a - g045) / g045 * H_appr_A
             - (gr_b - g045) / g045 * H_appr_B) + h_dif
     
-def height_dif_normal(phi_a: geod.Angle, phi_b: geod.Angle,
+def height_dif_normal(phi_a, phi_b,
                       H_appr_A: float, H_appr_B: float, 
                       h_dif: float, 
                       g_a: float, g_b: float) -> float:
@@ -164,7 +166,7 @@ def height_dif_normal(phi_a: geod.Angle, phi_b: geod.Angle,
     """
     
     gi = np.average([g_a, g_b])
-    g045 = gamma0_grs80(geod.Angle([np.pi/4]))
+    g045 = gamma0_grs80(obj.Angle([np.pi/4]))
     gam_a = gamma0_grs80(phi_a) - 0.3086*(H_appr_A/2)
     gam_b = gamma0_grs80(phi_b) - 0.3086*(H_appr_B/2)
     return ((gi-g045) / g045 * h_dif
@@ -199,7 +201,7 @@ def height_dynamic(C):
 
     """
     if hasattr(C, 'C'): C = C.C
-    return C / gamma0_grs80(geod.Angle(np.pi/4))
+    return C / gamma0_grs80(obj.Angle(np.pi/4))
 
 def height_orthometric(C, g, H_appr):
     """
@@ -270,7 +272,7 @@ class Height:
     def __init__(self, 
                  C: float, 
                  output_type: str | None,
-                 phi: geod.Angle | None = None, 
+                 phi = None, 
                  g: float | None = None,
                  H_appr: float | None = None) -> None:
         if hasattr(C, 'C'):
@@ -335,7 +337,7 @@ class GeopotNum:
     """
     def __init__(self, height: float,
                  system: str,
-                 phi: geod.Angle | None = None, 
+                 phi = None, 
                  g: float | None = None,
                  density: float = 2.67) -> None:
         match system:
@@ -345,7 +347,7 @@ class GeopotNum:
                 self.C = height * gr
             
             case 'dynamic':
-                self.C = height * gamma0_grs80(geod.Angle(np.pi/4))
+                self.C = height * gamma0_grs80(obj.Angle(np.pi/4))
                 
             case 'normal':
                 assert phi is not None, 'Unspecified phi in GeopotNum initialization'
