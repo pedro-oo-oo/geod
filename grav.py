@@ -311,6 +311,9 @@ class Height:
     def __str__(self) -> str:
         return f'{self.convert(self.output_type):.3f}'
     
+    def __repr__(self) -> str:
+        return f'{self.convert(self.output_type):.3f}'
+    
 
 class GeopotNum:
     """
@@ -364,5 +367,8 @@ class GeopotNum:
         'print me daddy uwu'
         return f'{self.C:.3f}'
     
+    def __repr__(self):
+        'represent me daddy uwu'
+        return f'{self.C:.3f}'
 
                 
