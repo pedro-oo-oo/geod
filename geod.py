@@ -51,7 +51,7 @@ class MissingArgError(ValueError):
     
 def approx(num,rnd):
     'Broken, use built-in round, fix in progress'
-    
+     
     # raise AttributeError('geod.approx is broken, use built-in round method, fix in progress')
     return round(num, rnd)
     
@@ -792,11 +792,105 @@ def get_dist_azim_elevation(obs_crd, aim_crd):
             Elevation angle to that point.
 
     """
-    
-    # sat = geod.Coordinates3d('xyz', 61358.135,  15485900.983, -21574930.741)
-    # obs = geod.Coordinates3d('flh', geod.Angle([54]), geod.Angle([15]), 100)
-
     neu=XYZ2neu(aim_crd-obs_crd, obs_crd)
     s, azim, elev = get_obs_data_from_neu(neu)
     return s, azim, elev
+
+def niv_height_dif(w1, p1, p2, w2, niv_type):
+    """
+    Calculates height difference at a single difference measure.
+
+    Args:
+        w1 (int): 
+            Younger backwards measure
+        p1 (int): 
+            Younger forward measure
+        p2 (int): 
+            Older forward measure
+        w2 (int): 
+            Older backwards measure
+        niv_type:
+            If Ni002, Ni004, Ni007 -> set value to 1
+            If WildN3, OptionN1 -> set value to 0.5
+
+    Returns:
+        Height difference
+
+    """
+    assert niv_type in [1, 0.5], """niv_type:
+        If Ni002, Ni004, Ni007 -> set value to 1
+        If WildN3, OptionN1 -> set value to 0.5"""
+    for i in (w1, p1, p2, w2):
+        if not isinstance(i, int):
+            raise TypeError("Measure can't be a float")
+    return ((w1-p1) + (w2-p2)) / 2 * niv_type*1e-5
+
+def quasihorizon_check(dh_cen, dh_ex, len_ex_p, len_ex_w):
+    """
+    Check whether quasihorizon error is within acceptable range.
+
+    Args:
+        dh_cen (float): 
+            Height dif measured from central position
+        dh_ex (float): 
+            Height dif measured from excentric position
+        len_ex_p (float): 
+            Distance from the excentric position to forward point
+        len_ex_w (float): 
+            Distance from the excentric position to backwards point
+
+    Returns:
+        bool: Acceptable?
+        geod.Angle: Error value
+    """
+    alpha = obj.Angle(np.arctan((dh_cen-dh_ex) / (len_ex_p-len_ex_w)))
+    return alpha < obj.Angle([0,0,5]), alpha
     
+def niv_correction_temp(dh, exp, temp_avg, temp_comp):
+    """
+    Returns temperature correction for leveling measures
+
+    Args:
+        dh (float): 
+            Measured height difference
+        exp (float): 
+            Average expansion coefficient of two leveling staffs
+            Unit: μm / (m * °C)
+        temp_avg (float): 
+            Average temperature in Celsius
+        temp_comp (float): 
+            Comparison temperature in Celsius
+    """
+    return dh * exp * (temp_avg - temp_comp) 
+
+def niv_correction_comp(dh, meter_corr):
+    """
+    Returns comparison correction for leveling measures
+
+    Args:
+        dh (float): 
+            Measured height difference
+        meter_corr (float): 
+            Average correction for average length of a leveling staff pair meter
+    """
+    return dh * meter_corr
+
+# def niv_correction_lunisolar(azim_to_object,
+#                              azim_of_line,
+#                              zenith_ang_to_object,
+#                              object_type):
+#     """
+#     Returns lunisolar correction for leveling measures
+
+#     Args:
+#         azim_to_object (geod.Angle):
+#             Azimuth to the Sun or Moon
+#         azim_of_line (geod.Angle): 
+#             Azimuth of the measured line, from starting point
+#         zenith_ang_to_object (geod.Angle): 
+#             Zenithal distance of th Sun or Moon
+#         object_type (str): 
+#             What to count the correction for?
+#             options -> ('moon', 'sun', 'both')
+#     """
+#     return 0.7 * 

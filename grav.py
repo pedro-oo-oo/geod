@@ -24,13 +24,70 @@ def dg_height(height):
     """
     return round(0.3086 * height, 4)
 
-def drift():
-    ...
+def drift(g1, g2, times1, times2):
+    """
+    Args:
+        g1 (Array_like):
+            List of primary gravitational acceleration measures at every point.
+            To make it easy to use, it's advised to make the order of the items
+            follow the chronological order of measures. (e.g. when measuring as
+            ABCDABCD inputs gs as [gA, gB, gC, gD, gA, gB, gC, gD]. 
+            
+            This goes for every argument of this method. 
+            The arguments at a given position must (obviously) refer 
+            to the same measure.
+            I think you get the idea...
+        g2 (Array_like):
+            List of secondary gravitational acceleration measures at every point.
+        times1 (Array_like):
+            List of times elapsed 
+            until the corresponding primary g measure was taken. 
+            Deafult input in seconds, though geod.Time class is accepted
+            for your convenience :-)
+        times2 (Array_like):
+            List of times elapsed 
+            until the corresponding secondary measure was taken.
+    
+    Drift unit: mGal/s 
+
+    Returns the gravimeter drift based on acceleration measures,
+    needed to calculate drift corrections.
+
+    """
+    assert len(g2) == len(g1), 'g1 and g2 are not of equal size'
+    assert len(times2) == len(times1), 'times1 and times2 are not of equal size'
+    assert len(g1) == len(times1), 'g and times array-likes must be of same size'
+    for i in range(len(times1)):
+        if isinstance(times1, obj.Time):
+            times1[i] = times1[i].value
+        if isinstance(times2, obj.Time):
+            times2[i] = times2[i].value
+    if isinstance(g1, list):
+        return ( (sum((g2[i] - g1[i]) * (times2[i] - times1[i]) for i in range(len(g2)))) 
+            / (sum(times2[i] - times1[i] for i in range(len(g2)))**2))
+    else:
+        return (g2-g1) * (times2-times1) / ((times2-times1)**2)
     
 def gamma0_grs80(phi) -> float:
     gamma_0 = (978032.66 
                * (1 + 0.0053024*phi.sin()**2 - 0.0000058*phi.sin(2)**2))
     return (gamma_0)
+
+def dg_drift(drift, time):
+    """
+    Args:
+        drift (float):
+            Gravimeter drift in mGal/s.
+            Calculate using geod.grav.drift()
+        time (float | geod.Time):
+            Time elapsed since the first measure 
+            (or since the gravimeter drift calculation started)
+            Input in seconds or as an instance of geod.Time class
+
+    Returns:
+        Returns dg_drift correction to gravimetry calculations.
+        Unit: mGal
+    """
 
 def dg_bouguer(height: float, density: float = 2.67) -> float:
     """

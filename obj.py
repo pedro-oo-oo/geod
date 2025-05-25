@@ -838,13 +838,13 @@ class Time:
         return Time(self.value + other.value)
     
     def __mul__(self, other):
-        return Time(self.value * other)
+        return (self.value * other)
 
     def __rmul__(self, other):
-        return Time(self.value * other)
+        return (self.value * other)
     
     def __truediv__(self, other):
-        return Time(self.value / other)
+        return (self.value / other)
         
     def __eq__(self, other):
         return str(self) == str(other) 
