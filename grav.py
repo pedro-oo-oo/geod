@@ -17,6 +17,12 @@ from . import geod
 from . import funcs
 from . import obj
 
+def mgal2ms2(mgal):
+    return mgal*1e-5
+
+def ms22mgal(ms2):
+    return ms2*1e5
+
 def dg_height(height):
     """
     Returns dg_h correction to gravimetry calculations.
@@ -54,13 +60,21 @@ def drift(g1, g2, times1, times2):
     needed to calculate drift corrections.
 
     """
+    if not isinstance(g1, list):
+        g1 = [g1]
+    if not isinstance(g2, list):
+        g2 = [g2]
+    if not isinstance(times1, list):
+        times1 = [times1]
+    if not isinstance(times2, list):
+        times2 = [times2]
     assert len(g2) == len(g1), 'g1 and g2 are not of equal size'
     assert len(times2) == len(times1), 'times1 and times2 are not of equal size'
     assert len(g1) == len(times1), 'g and times array-likes must be of same size'
     for i in range(len(times1)):
-        if isinstance(times1, obj.Time):
+        if isinstance(times1[i], obj.Time):
             times1[i] = times1[i].value
-        if isinstance(times2, obj.Time):
+        if isinstance(times2[i], obj.Time):
             times2[i] = times2[i].value
     if isinstance(g1, list):
         return ( (sum((g2[i] - g1[i]) * (times2[i] - times1[i]) for i in range(len(g2)))) 
@@ -71,7 +85,7 @@ def drift(g1, g2, times1, times2):
 def gamma0_grs80(phi) -> float:
     gamma_0 = (978032.66 
                * (1 + 0.0053024*phi.sin()**2 - 0.0000058*phi.sin(2)**2))
-    return (gamma_0)
+    return gamma_0
 
 def dg_drift(drift, time):
     """
@@ -103,7 +117,10 @@ def dg_poincaryprey(height: float, density: float = 2.67) -> float:
     """
     return round((0.3086 - 2*0.04192 * density) * height, 4)
 
-def anomaly(phi, g: float, dg: float) -> float:
+def anomaly(phi, g: float, 
+            height: float,
+            anom_type: str, 
+            density: float =2.67) -> float:
     """
     Returns gravitational anomaly in a given point, in mGal
 
@@ -112,15 +129,26 @@ def anomaly(phi, g: float, dg: float) -> float:
             Point's latitude
         g (float):
             Gravitational acceleration in mGal
-        dg (float): 
-            dg correction (Height / Bouguer / Poincary-Prey)
+        height (float):
+            Point's height
+        anom_type (str):
+            Anomaly type
+            ('height' / 'bg' / 'pprey')
+        density (float):
+            Mass density below point. Default 2.67 g/cm3
 
     Returns:
         float: DESCRIPTION.
 
     """
-    
-    delta = g + dg - gamma0_grs80(phi)
+    match anom_type:
+        case 'height':
+            delta = g + dg_height(height) - gamma0_grs80(phi)
+        case 'bg':
+            delta = g + dg_bouguer(height, density) + \
+                dg_height(height) - gamma0_grs80(phi)
+        case 'pprey':
+            delta = g + dg_poincaryprey(height, density) - gamma0_grs80(phi)
     return round(delta, 4)
     
 def height_dif_geopot(h_dif: float, g_a:float, g_b: float) -> float:

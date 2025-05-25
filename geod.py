@@ -875,22 +875,97 @@ def niv_correction_comp(dh, meter_corr):
     """
     return dh * meter_corr
 
-# def niv_correction_lunisolar(azim_to_object,
-#                              azim_of_line,
-#                              zenith_ang_to_object,
-#                              object_type):
-#     """
-#     Returns lunisolar correction for leveling measures
+def niv_correction_lunisolar(azim_to_object,
+                              azim_of_line,
+                              zenith_ang_to_object,
+                              path_length,
+                              object_type):
+    """
+    Returns lunisolar correction for leveling measures
 
-#     Args:
-#         azim_to_object (geod.Angle):
-#             Azimuth to the Sun or Moon
-#         azim_of_line (geod.Angle): 
-#             Azimuth of the measured line, from starting point
-#         zenith_ang_to_object (geod.Angle): 
-#             Zenithal distance of th Sun or Moon
-#         object_type (str): 
-#             What to count the correction for?
-#             options -> ('moon', 'sun', 'both')
-#     """
-#     return 0.7 * 
+    Args:
+        azim_to_object (geod.Angle):
+            Azimuth to the Sun or Moon
+        azim_of_line (geod.Angle): 
+            Azimuth of the measured line, from starting point
+        zenith_ang_to_object (geod.Angle): 
+            Zenithal distance of the Sun or Moon
+        path_length (float):
+            Length of the leveling path in meters
+        object_type (str): 
+            What to count the correction for?
+            options -> ('moon', 'sun', 'both')
+    """
+    match object_type:
+        case 'moon':
+            k = 8.5e3
+            return (0.7 * k * path_length * zenith_ang_to_object.sin(2) 
+                    * (azim_to_object - azim_of_line).cos())
+        case 'sun':
+            k = 3.9e3
+            return (0.7 * k * path_length * zenith_ang_to_object.sin(2) 
+                    * (azim_to_object - azim_of_line).cos())
+        # case 'both':
+        #     return ((0.7 * 8.5e3 * path_length * zenith_ang_to_object.sin(2) 
+        #             * (azim_to_object - azim_of_line).cos())
+        #             + (0.7 * 3.9e3 * path_length * zenith_ang_to_object.sin(2) 
+        #             * (azim_to_object - azim_of_line).cos()))
+        
+def height_dif_corrected(dh: float, 
+                         exp: float, 
+                         temp_avg: float, 
+                         temp_comp: float, 
+                         meter_corr: float, 
+                         azim_to_moon: obj.Angle, 
+                         zenith_ang_to_moon: obj.Angle, 
+                         azim_to_sun: obj.Angle, 
+                         zenith_ang_to_sun: obj.Angle, 
+                         azim_of_line: obj.Angle, 
+                         path_length: float):
+    """
+    Calculate height difference with all corrections included.
+
+    Args:
+        dh (float): 
+            Measured height difference
+        exp (float): 
+            Average expansion coefficient of two leveling staffs
+            Unit: μm / (m * °C)
+        temp_avg (float): 
+            Average temperature in Celsius
+        temp_comp (float): 
+            Comparison temperature in Celsius
+        meter_corr (float): 
+            Average correction for average length of a leveling staff pair meter
+        azim_to_moon (geod.Angle):
+            Azimuth to the Moon
+        zenith_ang_to_moon (geod.Angle):
+            Zenithal distance of the Moon
+        azim_to_sun (obj.Angle): 
+            Azimuth to the Sun
+        zenith_ang_to_sun (geod.Angle):
+            Zenithal distance of the Sun
+        azim_of_line (geod.Angle): 
+            Azimuth of the measured line, from starting point
+        path_length (float):
+            Length of the leveling path in meters
+
+    Returns:
+        dh_cor (float):
+            Corrected height difference
+        cor_temp
+            Temperature correction
+        cor_comp
+            Comparison correction
+        cor_lunsol
+            Lunisolar correction
+    """
+    cor_temp = niv_correction_temp(dh, exp, temp_avg, temp_comp)
+    cor_comp = niv_correction_comp(dh, meter_corr)
+    cor_lunsol = (niv_correction_lunisolar(azim_to_moon, azim_of_line, 
+                                    zenith_ang_to_moon, path_length, 'moon')
+            + niv_correction_lunisolar(azim_to_sun, azim_of_line, 
+                                    zenith_ang_to_sun, path_length, 'sun'))
+    dh_cor = dh + cor_comp + cor_lunsol + cor_temp
+    return dh_cor, cor_temp, cor_comp, cor_lunsol    
+    
